@@ -1,0 +1,60 @@
+{
+  "name": "@diligentworkman/platinum-components",
+  "version": "0.0.1",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "PromethiumJS components built on top of Web Awesome and Silver Components",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "promethiumjs",
+    "ui",
+    "frontend",
+    "components",
+    "web awesome"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "author": "Paul Amoah",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diligentworkman/platinum-components.git"
+  },
+  "bugs": {
+    "url": "https://github.com/diligentworkman/platinum-components/issues"
+  },
+  "homepage": "https://github.com/diligentworkman/platinum-components#readme",
+  "devDependencies": {
+    "@awesome.me/webawesome": "catalog:",
+    "lit": "catalog:",
+    "promethium-js": "catalog:",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "peerDependencies": {
+    "@awesome.me/webawesome": "catalog:",
+    "lit": "^catalog:",
+    "promethium-js": "catalog:"
+  },
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0"
+  }
+}

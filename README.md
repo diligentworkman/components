@@ -1,3 +1,3 @@
-# Platinum Components
+# Components
 
-A bunch of PromethiumJS components and built on top of Web Awesome and 
+Custom elements and PromethiumJS components built on top of Web Awesome and ZagJS
