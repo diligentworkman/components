@@ -1,39 +1,51 @@
 import { styleMap } from "lit/directives/style-map.js";
-import { adaptEffect, adaptState } from "promethium-js";
+import { adaptEffect, styles } from "promethium-js";
 import { createRef, ref } from "lit/directives/ref.js";
-import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import {
-  attachClosestEdge,
-  extractClosestEdge,
-  Edge,
-} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { JSX } from "promethium-js/jsx-runtime";
 import "@awesome.me/webawesome/dist/components/tree-item/tree-item.js";
 import "@awesome.me/webawesome/dist/components/button-group/button-group.js";
+import "@awesome.me/webawesome/dist/components/button/button.js";
+import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import WaTreeItem from "@awesome.me/webawesome/dist/components/tree-item/tree-item.js";
 import WaButtonGroup from "@awesome.me/webawesome/dist/components/button-group/button-group.js";
+import { WaCollapseEvent, WaExpandEvent } from "@awesome.me/webawesome";
+import {
+  adaptDraggableFunctionality,
+  DraggableOptions,
+  DropTargetOptions,
+} from "./adaptDraggableFunctionality";
+import { css } from "lit";
 
-export type DraggableOptions = Parameters<typeof draggable>[0];
-export type DropTargetOptions = Parameters<typeof dropTargetForElements>[0];
+const treeItemStyles = css`
+  ${styles.scope} wa-button::part(base) {
+    padding: 0.2rem;
+    width: max-content;
+    height: max-content;
+  }
+`;
 
-export function TreeItem(props: {
+export type TreeItemProps = {
   children: JSX.Element;
-  tooltipContent: string;
+  title: string;
+  items?: Array<TreeItemProps>;
   scrollIntoView?: boolean;
-  actionButtons?: JSX.Element;
+  actionButtons?: Array<{
+    name?: string;
+    src?: string;
+    title: string;
+    onClick: (e: MouseEvent) => void;
+  }>;
   expanded?: boolean;
   selected?: boolean;
-  onExpand?: (e: Event) => void;
-  onCollapse?: (e: Event) => void;
+  onExpand?: (e: WaExpandEvent) => void;
+  onCollapse?: (e: WaCollapseEvent) => void;
   onDoubleClick?: (e: MouseEvent) => void;
   onSelect?: (e: MouseEvent) => void;
   draggableOptions?: Partial<DraggableOptions>;
   dropTargetOptions?: Partial<DropTargetOptions>;
-}) {
-  const draggedOverEdge = adaptState<Edge | null>(null);
-  const dragging = adaptState(false);
+};
+
+export function TreeItem(props: TreeItemProps) {
   const treeItemRef = createRef<WaTreeItem>();
   const buttonGroupRef = createRef<WaButtonGroup>();
 
@@ -41,68 +53,6 @@ export function TreeItem(props: {
     () => {
       if (props.scrollIntoView) {
         treeItemRef.value?.scrollIntoView();
-      }
-    },
-    { deps: () => void 0 },
-  );
-
-  adaptEffect(
-    () => {
-      if (
-        props.draggableOptions &&
-        props.dropTargetOptions &&
-        treeItemRef.value
-      ) {
-        props.draggableOptions.element = treeItemRef.value;
-        props.draggableOptions.onDragStart = () => dragging.set(true);
-        props.draggableOptions.onDrop = () => dragging.set(false);
-        props.dropTargetOptions.element = treeItemRef.value;
-        const previousGetDataFn = props.dropTargetOptions.getData;
-        props.dropTargetOptions.getData = ({ input, element, source }) => {
-          const data =
-            previousGetDataFn?.({
-              input,
-              element,
-              source,
-            }) ?? {};
-
-          return attachClosestEdge(data, {
-            input,
-            element,
-            // you can specify what edges you want to allow the user to be closest to
-            allowedEdges: ["top", "bottom"],
-          });
-        };
-        props.dropTargetOptions.onDrag = ({ self, source }) => {
-          // @maybe
-          const closestEdgeOfTarget = extractClosestEdge(self.data);
-          if (
-            self.element === source.element ||
-            self.data.type !== source.data.type
-          ) {
-            draggedOverEdge.set(null);
-          } else {
-            draggedOverEdge.set(closestEdgeOfTarget);
-          }
-        };
-        props.dropTargetOptions.onDragLeave = () => {
-          draggedOverEdge.set(null);
-        };
-        const previousOnDropFunction = props.dropTargetOptions.onDrop;
-        props.dropTargetOptions.onDrop = ({ self, location, source }) => {
-          if (
-            self.data.type === source.data.type &&
-            self.element !== source.element
-          ) {
-            previousOnDropFunction?.({ self, location, source });
-          }
-          draggedOverEdge.set(null);
-        };
-
-        return combine(
-          draggable(props.draggableOptions as DraggableOptions),
-          dropTargetForElements(props.dropTargetOptions as DropTargetOptions),
-        );
       }
     },
     { deps: () => void 0 },
@@ -123,54 +73,70 @@ export function TreeItem(props: {
     { deps: () => void 0 },
   );
 
+  const { draggedOverEdge, dragging } = adaptDraggableFunctionality({
+    draggableOptions: props.draggableOptions,
+    dropTargetOptions: props.dropTargetOptions,
+    treeItemRef,
+  });
+
   return () => {
     const draggedOverStyles = draggedOverEdge.value
       ? {
           [`border-${draggedOverEdge.value}`]:
-            "0.15rem solid var(--sl-color-primary-500)",
+            "0.15rem solid var(--wa-color-brand-50)",
         }
       : {};
 
     return (
       <wa-tree-item
+        use:styles={styles.inject(treeItemStyles)}
         use:ref={ref(treeItemRef)}
-        attr:title={props.tooltipContent}
+        attr:title={props.title}
         $attr:style={styleMap({
-          overflow: "hidden",
-          whiteSpace: "noWrap",
+          // whiteSpace: "noWrap",
           position: "relative",
           opacity: dragging.value ? 0.5 : 1,
           ...draggedOverStyles,
         })}
         bool:expanded={props.expanded}
         bool:selected={props.selected}
-        on:sl-expand={props.onExpand}
-        on:sl-collapse={props.onCollapse}
+        on:wa-expand={props.onExpand}
+        on:wa-collapse={props.onCollapse}
         on:click={props.onSelect}
         on:dblclick={props.onDoubleClick}
       >
+        {props.children}
+        {props.items?.map((item) => {
+          return <TreeItem {...item} />;
+        })}
         <div
-          attr:class="actions-container"
           $attr:style={styleMap({
             position: "absolute",
-            top: 0,
-            right: 0,
-            width: "100%",
-            minHeight: "2rem",
-            textAlign: "right",
+            top: "0.1rem",
+            right: "0.1rem",
           })}
         >
-          <wa-button-group
-            use:ref={ref(buttonGroupRef)}
-            attr:label="Actions"
-            $attr:style={styleMap({
-              padding: "0 0.4rem",
-            })}
-          >
-            {props.actionButtons}
-          </wa-button-group>
+          {props.actionButtons?.map((actionButton) => {
+            return (
+              <wa-button
+                attr:variant="neutral"
+                attr:appearance="plain"
+                attr:size="small"
+                on:click={actionButton.onClick}
+                $attr:style={styleMap({
+                  paddingRight: "0.1rem",
+                })}
+              >
+                <wa-icon
+                  attr:title={actionButton.title}
+                  attr:label={actionButton.title}
+                  attr:name={actionButton.name}
+                  attr:src={actionButton.src}
+                ></wa-icon>
+              </wa-button>
+            );
+          })}
         </div>
-        {props.children}
       </wa-tree-item>
     );
   };

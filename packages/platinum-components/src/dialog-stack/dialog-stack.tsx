@@ -1,19 +1,16 @@
 import "@awesome.me/webawesome/dist/components/dialog/dialog.js";
 import { adaptState } from "promethium-js";
-import { DraggableOptions, DropTargetOptions } from "../shared/dnd.types";
 import {
   WaAfterHideEvent,
   WaAfterShowEvent,
-  WaCollapseEvent,
-  WaExpandEvent,
   WaHideEvent,
-  WaSelectEvent,
   WaShowEvent,
 } from "@awesome.me/webawesome";
 import { CSSResult } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { live } from "lit/directives/live.js";
 import { JSX } from "promethium-js/jsx-runtime";
+import { TreeProps } from "../tree/tree.js";
 
 type CreateDialogStackNavigationStackEntry<
   T extends string,
@@ -38,35 +35,8 @@ export type DialogStackFormNavigationStackEntry =
     { elements: Array<JSX.Element> }
   >;
 
-export type DialogStackTreeNavigationStackEntryElement = {
-  tooltipText: string;
-  prefixElement?: JSX.Element;
-  label: string;
-  actionButtons: Array<{
-    tooltipText: string;
-    // TODO: have default icon
-    iconName?: string;
-    iconUrl?: string;
-    onClick?: (e: MouseEvent) => void;
-  }>;
-  scrollIntoView?: boolean;
-  expanded?: boolean;
-  selected?: boolean;
-  onExpand?: (e: WaExpandEvent) => void;
-  onCollapse?: (e: WaCollapseEvent) => void;
-  onDoubleClick?: (e: MouseEvent) => void;
-  onSelect?: (e: WaSelectEvent) => void;
-  draggableOptions?: Partial<DraggableOptions>;
-  dropTargetOptions?: Partial<DropTargetOptions>;
-};
-
 export type DialogStackTreeNavigationStackEntry =
-  CreateDialogStackNavigationStackEntry<
-    "tree",
-    {
-      elements: Array<DialogStackTreeNavigationStackEntryElement>;
-    }
-  >;
+  CreateDialogStackNavigationStackEntry<"tree", TreeProps>;
 
 export type DialogStackArbitraryContentNavigationStackEntry =
   CreateDialogStackNavigationStackEntry<
@@ -128,6 +98,12 @@ export function createDialogStackController() {
     navigationStack.set(navigationStackEntries);
   }
 
+  function navigateBack() {
+    navigationStack.mutate(() => {
+      navigationStack.value.pop();
+    });
+  }
+
   function closeDialogStack() {
     navigationStack.set([]);
   }
@@ -136,14 +112,17 @@ export function createDialogStackController() {
     getNavigationStack: navigationStack.get.bind(navigationStack),
     navigateDialogStackTo,
     replaceDialogStackNavigationStackWith,
+    navigateBack,
     closeDialogStack,
   };
 }
 
-export function DialogStack(props: {
+export type DialogStackProps = {
   controller: DialogStackController;
   styles?: CSSResult;
-}) {
+};
+
+export function DialogStack(props: DialogStackProps) {
   return () => {
     const navigationStack = props.controller.getNavigationStack();
     const navigationStackLength = navigationStack.length;
@@ -155,9 +134,13 @@ export function DialogStack(props: {
         <wa-dialog
           $prop:open={live(navigationStackLength > 0)}
           attr:label={item.label ?? "Dialog"}
+          on:wa-after-hide={() => {
+            props.controller.navigateBack();
+          }}
         >
           {
             // TODO: report `choose` for not passing in item to template function
+            // and implement `betterChoose`
             item.type === "form"
               ? "form"
               : item.type === "tree"

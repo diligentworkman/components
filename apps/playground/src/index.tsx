@@ -1,25 +1,18 @@
 import { render } from "lit";
 import "@awesome.me/webawesome/dist/styles/webawesome.css";
-import {
-  DialogStack,
-  createDialogStackController,
-} from "@diligentworkman/platinum-components";
-
-const dialogStackController = createDialogStackController();
+import "./custom-elements.ts";
+import { DialogStackTestComponent } from "./test-components/dialog-stack.tsx";
+import { TestComponentContainer } from "./test-component-container.tsx";
+import { TreeTestComponent } from "./test-components/tree.tsx";
 
 render(
   <>
-    <DialogStack controller={dialogStackController} />
-    <wa-button
-      on:click={() => {
-        dialogStackController.navigateDialogStackTo({
-          type: "arbitraryContent",
-          children: <>Nope</>,
-        });
-      }}
-    >
-      Hi, button here!
-    </wa-button>
+    <TestComponentContainer name="Dialog Stack">
+      <DialogStackTestComponent />
+    </TestComponentContainer>
+    <TestComponentContainer name="Tree">
+      <TreeTestComponent />
+    </TestComponentContainer>
   </>,
   document.body,
 );

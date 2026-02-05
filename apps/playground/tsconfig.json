@@ -34,6 +34,5 @@
     "jsx": "react-jsx",
     "jsxImportSource": "promethium-js"
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }
